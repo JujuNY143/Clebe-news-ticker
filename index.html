@@ -97,6 +97,7 @@
             height: 100%;
             animation: scroll 45s linear infinite;
             white-space: nowrap;
+            will-change: transform;
         }
 
         @keyframes scroll {
@@ -470,6 +471,7 @@
             }
 
             renderContent() {
+                // Duplicate content to ensure seamless loop without gaps
                 const items = this.currentContent.map(item => {
                     const badgeClass = item.badge;
                     const textClass = item.type === 'breaking' ? 'breaking' : 
@@ -486,7 +488,13 @@
                     `;
                 }).join('');
 
-                this.tickerScroll.innerHTML = items;
+                // Duplicate the content to create seamless scrolling
+                this.tickerScroll.innerHTML = items + items;
+                
+                // Force reflow to restart animation cleanly
+                this.tickerScroll.style.animation = 'none';
+                this.tickerScroll.offsetHeight;
+                this.tickerScroll.style.animation = 'scroll 45s linear infinite';
             }
 
             updateContent() {
@@ -509,24 +517,31 @@
                 this.updateContent();
                 this.updateAwardSeason();
                 
+                // Restart animation smoothly every cycle
                 setInterval(() => {
-                    this.tickerScroll.style.animation = 'none';
-                    this.tickerScroll.offsetHeight;
-                    this.tickerScroll.style.animation = 'scroll 45s linear infinite';
+                    this.restartAnimation();
                 }, 45000);
+            }
+
+            restartAnimation() {
+                // Clean restart of animation to prevent glitches
+                this.tickerScroll.style.animation = 'none';
+                this.tickerScroll.offsetHeight; // Force reflow
+                this.tickerScroll.style.animation = 'scroll 45s linear infinite';
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            new EntertainmentTicker();
+            window.entertainmentTicker = new EntertainmentTicker();
         });
 
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
-                const tickerScroll = document.getElementById('tickerScroll');
-                tickerScroll.style.animation = 'none';
-                tickerScroll.offsetHeight;
-                tickerScroll.style.animation = 'scroll 45s linear infinite';
+                // Get ticker instance and restart animation
+                const ticker = window.entertainmentTicker;
+                if (ticker) {
+                    ticker.restartAnimation();
+                }
             }
         });
     </script>
