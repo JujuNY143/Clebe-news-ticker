@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entertainment Ticker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .ticker-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 3px solid #d4af37;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .ticker-header {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            color: white;
+            padding: 0 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-width: 250px;
+            border-right: 2px solid #d4af37;
+            position: relative;
+        }
+
+        .ticker-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(212, 175, 55, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .live-text {
+            color: #ff4444;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .channel-name {
+            color: #87CEEB;
+            font-size: 12px;
+            margin-left: 10px;
+            font-weight: 500;
+        }
+
+        .ticker-content {
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(90deg, #1a1a1a, #2a2a2a, #1a1a1a);
+        }
+
+        .ticker-scroll {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            animation: scroll 60s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 40px;
+            font-size: 14px;
+            color: white;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 8px;
+            text-transform: uppercase;
+            color: white;
+            text-shadow: none;
+        }
+
+        .badge.movies {
+            background: linear-gradient(135deg, #d4af37, #b8941f);
+            box-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        }
+
+        .badge.tv {
+            background: linear-gradient(135deg, #ff4444, #cc3333);
+            box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
+        }
+
+        .badge.music {
+            background: linear-gradient(135deg, #8b00ff, #6600cc);
+            box-shadow: 0 2px 4px rgba(139, 0, 255, 0.3);
+        }
+
+        .badge.celebrity {
+            background: linear-gradient(135deg, #ff69b4, #cc4190);
+            box-shadow: 0 2px 4px rgba(255, 105, 180, 0.3);
+        }
+
+        .badge.breaking {
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            animation: flash 1s infinite;
+            box-shadow: 0 2px 4px rgba(255, 0, 0, 0.5);
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .separator {
+            color: #d4af37;
+            margin: 0 15px;
+            font-size: 16px;
+        }
+
+        .trending {
+            color: #ff69b4;
+            font-weight: bold;
+        }
+
+        .box-office {
+            color: #d4af37;
+            font-weight: bold;
+        }
+
+        .award-season {
+            color: #ff4444;
+            font-weight: bold;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .ticker-container {
+                height: 50px;
+            }
+            
+            .ticker-header {
+                min-width: 200px;
+                padding: 0 15px;
+            }
+            
+            .live-text {
+                font-size: 12px;
+            }
+            
+            .channel-name {
+                font-size: 10px;
+            }
+            
+            .ticker-item {
+                font-size: 12px;
+            }
+            
+            .badge {
+                font-size: 9px;
+                padding: 3px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="ticker-container">
+        <div class="ticker-header">
+            <div class="channel-name">LIKED NEWS</div>
+            <div class="live-text">LIVE ENTERTAINMENT</div>
+        </div>
+        <div class="ticker-content">
+            <div class="ticker-scroll" id="tickerScroll">
+                <!-- Content will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class EntertainmentTicker {
+            constructor() {
+                this.tickerScroll = document.getElementById('tickerScroll');
+                this.currentContent = [];
+                this.isAwardSeason = this.checkAwardSeason();
+                this.newsCache = new Map();
+                this.lastFetch = 0;
+                this.fetchInterval = 300000; // 5 minutes
+                
+                this.init();
+            }
+
+            checkAwardSeason() {
+                const now = new Date();
+                const month = now.getMonth() + 1;
+                
+                // Award seasons: January-March (Oscars, Grammys), September (Emmys)
+                return (month >= 1 && month <= 3) || month === 9;
+            }
+
+            async fetchGoogleNews() {
+                const queries = [
+                    'entertainment+news',
+                    'celebrity+news',
+                    'hollywood+news',
+                    'movie+news',
+                    'tv+show+news',
+                    'music+news',
+                    'awards+show+news'
+                ];
+                
+                const allNews = [];
+                
+                for (const query of queries) {
+                    try {
+                        // Using RSS2JSON service to fetch Google News RSS
+                        const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en-US&gl=US&ceid=US:en`;
+                        const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                        
+                        const response = await fetch(proxyUrl);
+                        const data = await response.json();
+                        
+                        if (data.status === 'ok' && data.items) {
+                            const newsItems = data.items.slice(0, 5).map(item => ({
+                                title: this.cleanTitle(item.title),
+                                source: this.extractSource(item.title),
+                                pubDate: new Date(item.pubDate),
+                                category: this.categorizeNews(item.title.toLowerCase())
+                            }));
+                            allNews.push(...newsItems);
+                        }
+                    } catch (error) {
+                        console.log(`Error fetching ${query}:`, error);
+                    }
+                }
+                
+                return allNews;
+            }
+
+            async fetchTMZNews() {
+                try {
+                    // TMZ RSS feed
+                    const rssUrl = 'https://www.tmz.com/rss.xml';
+                    const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                    
+                    const response = await fetch(proxyUrl);
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok' && data.items) {
+                        return data.items.slice(0, 8).map(item => ({
+                            title: this.cleanTitle(item.title),
+                            source: 'TMZ',
+                            pubDate: new Date(item.pubDate),
+                            category: 'celebrity'
+                        }));
+                    }
+                } catch (error) {
+                    console.log('Error fetching TMZ:', error);
+                }
+                
+                return [];
+            }
+
+            async fetchVarietyNews() {
+                try {
+                    // Variety Entertainment RSS
+                    const rssUrl = 'https://variety.com/c/film/feed/';
+                    const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                    
+                    const response = await fetch(proxyUrl);
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok' && data.items) {
+                        return data.items.slice(0, 6).map(item => ({
+                            title: this.cleanTitle(item.title),
+                            source: 'Variety',
+                            pubDate: new Date(item.pubDate),
+                            category: 'movies'
+                        }));
+                    }
+                } catch (error) {
+                    console.log('Error fetching Variety:', error);
+                }
+                
+                return [];
+            }
+
+            async fetchEntertainmentWeekly() {
+                try {
+                    // Entertainment Weekly RSS
+                    const rssUrl = 'https://ew.com/feed/';
+                    const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+                    
+                    const response = await fetch(proxyUrl);
+                    const data = await response.json();
+                    
+                    if (data.status === 'ok' && data.items) {
+                        return data.items.slice(0, 6).map(item => ({
+                            title: this.cleanTitle(item.title),
+                            source: 'EW',
+                            pubDate: new Date(item.pubDate),
+                            category: this.categorizeNews(item.title.toLowerCase())
+                        }));
+                    }
+                } catch (error) {
+                    console.log('Error fetching EW:', error);
+                }
+                
+                return [];
+            }
+
+            cleanTitle(title) {
+                // Remove source names and clean up titles
+                return title
+                    .replace(/^.*? - /, '')  // Remove "Source - " prefix
+                    .replace(/\s+/g, ' ')    // Clean up extra spaces
+                    .trim()
+                    .substring(0, 120);      // Limit length
+            }
+
+            extractSource(title) {
+                const sourceMatch = title.match(/^(.*?) - /);
+                return sourceMatch ? sourceMatch[1] : 'News';
+            }
+
+            categorizeNews(title) {
+                if (title.includes('movie') || title.includes('film') || title.includes('box office') || title.includes('cinema')) {
+                    return 'movies';
+                } else if (title.includes('tv') || title.includes('television') || title.includes('series') || title.includes('show')) {
+                    return 'tv';
+                } else if (title.includes('music') || title.includes('album') || title.includes('song') || title.includes('concert') || title.includes('tour')) {
+                    return 'music';
+                } else {
+                    return 'celebrity';
+                }
+            }
+
+            async fetchAllNews() {
+                const now = Date.now();
+                
+                // Check if we need to fetch new data
+                if (now - this.lastFetch < this.fetchInterval && this.currentContent.length > 0) {
+                    return;
+                }
+
+                console.log('Fetching live entertainment news...');
+                
+                try {
+                    // Fetch from all sources concurrently
+                    const [googleNews, tmzNews, varietyNews, ewNews] = await Promise.all([
+                        this.fetchGoogleNews(),
+                        this.fetchTMZNews(),
+                        this.fetchVarietyNews(),
+                        this.fetchEntertainmentWeekly()
+                    ]);
+
+                    // Combine and sort by date
+                    const allNews = [...googleNews, ...tmzNews, ...varietyNews, ...ewNews];
+                    const sortedNews = allNews
+                        .filter(item => item.title && item.title.length > 10)
+                        .sort((a, b) => b.pubDate - a.pubDate)
+                        .slice(0, 25); // Take top 25 most recent
+
+                    // Convert to ticker format
+                    this.currentContent = sortedNews.map(item => ({
+                        badge: item.category,
+                        type: this.isRecent(item.pubDate) ? 'breaking' : 'normal',
+                        text: item.title,
+                        source: item.source
+                    }));
+
+                    this.lastFetch = now;
+                    
+                    if (this.currentContent.length === 0) {
+                        // Fallback to sample content if no news fetched
+                        this.currentContent = this.getFallbackContent();
+                    }
+                    
+                    console.log(`Loaded ${this.currentContent.length} news items`);
+                    this.renderContent();
+                    
+                } catch (error) {
+                    console.error('Error fetching news:', error);
+                    // Use fallback content
+                    this.currentContent = this.getFallbackContent();
+                    this.renderContent();
+                }
+            }
+
+            isRecent(pubDate) {
+                const now = new Date();
+                const diffHours = (now - pubDate) / (1000 * 60 * 60);
+                return diffHours < 2; // Consider news "breaking" if less than 2 hours old
+            }
+
+            getFallbackContent() {
+                return [
+                    { badge: 'movies', type: 'normal', text: 'Loading latest entertainment news from Google News, TMZ, Variety...', source: 'System' },
+                    { badge: 'celebrity', type: 'normal', text: 'Fetching live celebrity updates and Hollywood buzz...', source: 'System' },
+                    { badge: 'tv', type: 'normal', text: 'Getting latest TV show news and streaming updates...', source: 'System' },
+                    { badge: 'music', type: 'normal', text: 'Loading music industry news and chart updates...', source: 'System' }
+                ];
+            }
+
+            renderContent() {
+                const items = this.currentContent.map(item => {
+                    const badgeClass = item.badge;
+                    const textClass = item.type === 'breaking' ? 'breaking' : 
+                                    item.type === 'trending' ? 'trending' : 
+                                    item.type === 'box-office' ? 'box-office' :
+                                    item.type === 'award-season' ? 'award-season' : '';
+                    
+                    return `
+                        <div class="ticker-item">
+                            <span class="badge ${badgeClass}">${item.badge}</span>
+                            <span class="${textClass}">${item.text}</span>
+                        </div>
+                        <span class="separator">★</span>
+                    `;
+                }).join('');
+
+                this.tickerScroll.innerHTML = items;
+            }
+
+            updateContent() {
+                // Update content every 5 minutes
+                setInterval(() => {
+                    this.fetchAllNews();
+                }, this.fetchInterval);
+            }
+
+            updateAwardSeason() {
+                // Check award season daily
+                setInterval(() => {
+                    this.isAwardSeason = this.checkAwardSeason();
+                }, 86400000); // 24 hours
+            }
+
+            init() {
+                // Show loading content first
+                this.currentContent = this.getFallbackContent();
+                this.renderContent();
+                
+                // Then fetch live news
+                this.fetchAllNews();
+                this.updateContent();
+                this.updateAwardSeason();
+                
+                // Refresh animation every 60 seconds
+                setInterval(() => {
+                    this.tickerScroll.style.animation = 'none';
+                    this.tickerScroll.offsetHeight; // Trigger reflow
+                    this.tickerScroll.style.animation = 'scroll 60s linear infinite';
+                }, 60000);
+            }
+        }
+
+        // Initialize ticker when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new EntertainmentTicker();
+        });
+
+        // Handle visibility changes to restart animation
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                const tickerScroll = document.getElementById('tickerScroll');
+                tickerScroll.style.animation = 'none';
+                tickerScroll.offsetHeight;
+                tickerScroll.style.animation = 'scroll 60s linear infinite';
+            }
+        });
+    </script>
+</body>
+</html>
